@@ -16,6 +16,10 @@ public enum HTTPClientResult {
     case failure(Error)
 }
 
+struct Root: Codable {
+    let items: [FeedItem]
+}
+
 public final class RemoteFeedLoader {
     private let url: URL
     private let client: HTTPClient
@@ -38,13 +42,13 @@ public final class RemoteFeedLoader {
     public func load(_ completion: @escaping (RemoteFeedLoader.Result) -> Void) {
         client.get(from: url) { result in
             switch result {
-            case let .success(data, response):
-                if let _ = try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as? [String: Any] {
-                    completion(.success([]))
-                } else {
+            case let .success(data, _):
+                do {
+                    let root = try JSONDecoder().decode(Root.self, from: data)
+                    completion(.success(root.items))
+                } catch {
                     completion(.failure(.invalidData))
                 }
-                
             case .failure:
                 completion(.failure(.connectivity))
             }

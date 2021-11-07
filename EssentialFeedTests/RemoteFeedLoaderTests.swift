@@ -64,6 +64,29 @@ class RemoteFeedLoaderTests: XCTestCase {
         }
     }
     
+    func test_load_deliverItemsOn200HTTPResponseWithJSONItems() {
+        let (sut, client) = makeSUT()
+        
+        let item1 = FeedItem(id: UUID(), description: "any description", location: "location", imageURL: URL(string: "https://any-image.com")!)
+        let feed: [FeedItem] = [item1]
+        let itemsJSON: [[String: Any]] = feed.map { item in
+            return [
+                "id": item.id.uuidString,
+                "image": item.imageURL.absoluteString,
+                "description": item.description!,
+                "location": item.location!
+            ]
+        }
+        
+        let items = ["items": itemsJSON]
+        
+        let json = try! JSONSerialization.data(withJSONObject: items, options: .fragmentsAllowed)
+        
+        expect(sut, toCompleteWithResult: .success([item1])) {
+            client.complete(withStatusCode: 200, data: json)
+        }
+    }
+    
     // MARK: - Happy Paths
     
     func test_load_deliversNoItemsOn200HTTPResponseWithEmptyJSONList() {
