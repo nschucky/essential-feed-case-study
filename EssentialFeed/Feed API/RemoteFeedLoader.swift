@@ -16,8 +16,19 @@ public enum HTTPClientResult {
     case failure(Error)
 }
 
-struct Root: Codable {
-    let items: [FeedItem]
+private struct Root: Decodable {
+    let items: [Item]
+}
+
+private struct Item: Decodable {
+    let id: UUID
+    let description: String?
+    let location: String?
+    let image: URL
+    
+    var item: FeedItem {
+        FeedItem(id: id, description: description, location: location, imageURL: image)
+    }
 }
 
 public final class RemoteFeedLoader {
@@ -49,7 +60,8 @@ public final class RemoteFeedLoader {
                 
                 do {
                     let root = try JSONDecoder().decode(Root.self, from: data)
-                    completion(.success(root.items))
+                    let items = root.items.map { $0.item }
+                    completion(.success(items))
                 } catch {
                     completion(.failure(.invalidData))
                 }
